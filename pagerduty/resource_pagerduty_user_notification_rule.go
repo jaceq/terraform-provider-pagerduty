@@ -24,14 +24,6 @@ func resourcePagerDutyUserNotificationRule() *schema.Resource {
 				Required: true,
 			},
 
-			"type": {
-				Type:     schema.TypeString,
-				Required: true,
-				ValidateFunc: validateValueFunc([]string{
-					"assignment_notification_rule",
-				}),
-			},
-
 			"start_delay_in_minutes": {
 				Type:     schema.TypeInt,
 				Required: true,
@@ -47,12 +39,12 @@ func resourcePagerDutyUserNotificationRule() *schema.Resource {
 			},
 			"contact_method": {
 				Required: true,
-				Type:     schema.TypeList,
+				Type:     schema.TypeMap,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"id": {
 							Type:     schema.TypeString,
-							Computed: true,
+							Required: true,
 						},
 						"type": {
 							Type:     schema.TypeString,
@@ -72,19 +64,11 @@ func resourcePagerDutyUserNotificationRule() *schema.Resource {
 }
 
 func buildUserNotificationRuleStruct(d *schema.ResourceData) *pagerduty.NotificationRule {
-	var contact_method, err = expandContactMethod(d.Get("contact_method"))
-	fmt.Printf("%v\n", contact_method)
-	fmt.Printf("%v\n", err)
 	notificationRule := &pagerduty.NotificationRule{
-		Type:                d.Get("type").(string),
+		Type:                "assignment_notification_rule",
 		StartDelayInMinutes: d.Get("start_delay_in_minutes").(int),
 		Urgency:             d.Get("urgency").(string),
-
-		/*	ContactMethod: &pagerduty.ContactMethodReference{
-					Type: "sms_contact_method",
-				ID: "PHE4XPR",
-			},
-		*/ContactMethod: contact_method,
+		ContactMethod:       expandContactMethod(d.Get("contact_method")),
 	}
 
 	return notificationRule
@@ -120,7 +104,7 @@ func resourcePagerDutyUserNotificationRuleRead(d *schema.ResourceData, meta inte
 	d.Set("type", resp.Type)
 	d.Set("urgency", resp.Urgency)
 	d.Set("start_delay_in_minutes", resp.StartDelayInMinutes)
-	//	d.Set("contact_method", flattenContactMethod(resp.ContactMethod))
+	d.Set("contact_method", flattenContactMethod(resp.ContactMethod))
 
 	return nil
 }
@@ -178,36 +162,23 @@ func resourcePagerDutyUserNotificationRuleImport(d *schema.ResourceData, meta in
 	return []*schema.ResourceData{d}, nil
 }
 
-func expandContactMethod(v interface{}) ([]*pagerduty.ContactMethodReference, error) {
-	var contactMethods []*pagerduty.ContactMethodReference
+func expandContactMethod(v interface{}) *pagerduty.ContactMethodReference {
+	cm := v.(map[string]interface{})
 
-	for _, cm := range v.([]interface{}) {
-
-		rcm := cm.(map[string]interface{})
-
-		contactMethod := &pagerduty.ContactMethodReference{
-			ID:   rcm["id"].(string),
-			Type: rcm["type"].(string),
-		}
-
-		contactMethods = append(contactMethods, contactMethod)
+	var contactMethod = &pagerduty.ContactMethodReference{
+		ID:   cm["id"].(string),
+		Type: cm["type"].(string),
 	}
 
-	return contactMethods, nil
+	return contactMethod
 }
 
-func flattenContactMethod(v []*pagerduty.ContactMethod) []map[string]interface{} {
-	var contactMethods []map[string]interface{}
+func flattenContactMethod(v *pagerduty.ContactMethodReference) map[string]interface{} {
 
-	for _, cm := range v {
-
-		contactMethod := map[string]interface{}{
-			"id":   cm.ID,
-			"type": cm.Type,
-		}
-
-		contactMethods = append(contactMethods, contactMethod)
+	var contactMethod = map[string]interface{}{
+		"id":   v.ID,
+		"type": v.Type,
 	}
 
-	return contactMethods
+	return contactMethod
 }
