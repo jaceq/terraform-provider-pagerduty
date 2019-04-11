@@ -1,4 +1,4 @@
-module github.com/terraform-providers/terraform-provider-pagerduty
+module github.com/jaceq/terraform-provider-pagerduty
 
 require (
 	github.com/blang/semver v3.5.1+incompatible // indirect

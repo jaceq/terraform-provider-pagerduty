@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/hashicorp/terraform/plugin"
-	"github.com/terraform-providers/terraform-provider-pagerduty/pagerduty"
+	"github.com/jaceq/terraform-provider-pagerduty/pagerduty"
 )
 
 func main() {
