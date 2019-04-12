@@ -12,8 +12,7 @@ import (
 func TestAccPagerDutyUserNotificationRuleContactMethod_Basic(t *testing.T) {
 	contactMethodType1 := "email_contact_method"
 	contactMethodType2 := "phone_contact_method"
-	contactMethodType3 := "push_notification_contact_method"
-	contactMethodType4 := "sms_contact_method"
+	contactMethodType3 := "sms_contact_method"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -38,12 +37,6 @@ func TestAccPagerDutyUserNotificationRuleContactMethod_Basic(t *testing.T) {
 					testAccCheckPagerDutyUserNotificationRuleExists("pagerduty_user_notification_rule.foo"),
 				),
 			},
-			{
-				Config: testAccCheckPagerDutyUserNotificationRuleContactMethodConfig(contactMethodType4),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckPagerDutyUserNotificationRuleExists("pagerduty_user_notification_rule.foo"),
-				),
-			},
 		},
 	})
 }
@@ -55,7 +48,7 @@ func testAccCheckPagerDutyUserNotificationRuleDestroy(s *terraform.State) error 
 			continue
 		}
 
-		if _, _, err := client.Users.GetContactMethod(r.Primary.Attributes["user_id"], r.Primary.ID); err == nil {
+		if _, _, err := client.Users.GetNotificationRule(r.Primary.Attributes["user_id"], r.Primary.ID); err == nil {
 			return fmt.Errorf("User notification rule still exists")
 		}
 
@@ -71,18 +64,18 @@ func testAccCheckPagerDutyUserNotificationRuleExists(n string) resource.TestChec
 		}
 
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("No user contact method ID is set")
+			return fmt.Errorf("No user notification rule ID is set")
 		}
 
 		client := testAccProvider.Meta().(*pagerduty.Client)
 
-		found, _, err := client.Users.GetContactMethod(rs.Primary.Attributes["user_id"], rs.Primary.ID)
+		found, _, err := client.Users.GetNotificationRule(rs.Primary.Attributes["user_id"], rs.Primary.ID)
 		if err != nil {
 			return err
 		}
 
 		if found.ID != rs.Primary.ID {
-			return fmt.Errorf("Contact method not found: %v - %v", rs.Primary.ID, found)
+			return fmt.Errorf("Notification rule not found: %v - %v", rs.Primary.ID, found)
 		}
 
 		return nil
@@ -114,22 +107,24 @@ resource "pagerduty_user" "foo" {
 resource "pagerduty_user_contact_method" "email_contact_method" {
   user_id = "${pagerduty_user.foo.id}"
   type    = "email_contact_method"
-  address = "foo@bar.com"
+  address = "foo-1@bar.com"
   label   = "Work"
 }
 
 resource "pagerduty_user_contact_method" "sms_contact_method" {
-  user_id = "${pagerduty_user.foo.id}"
-  type    = "sms_contact_method"
-  address = "1234567890"
-  label   = "Work"
+  user_id      = "${pagerduty_user.foo.id}"
+  type         = "sms_contact_method"
+  address      = "1234567890"
+  country_code = "+1"
+  label        = "Work"
 }
 
 resource "pagerduty_user_contact_method" "phone_contact_method" {
-  user_id = "${pagerduty_user.foo.id}"
-  type    = "phone_contact_method"
-  address = "1234567890"
-  label   = "Work"
+  user_id      = "${pagerduty_user.foo.id}"
+  type         = "phone_contact_method"
+  country_code = "+1"
+  address      = "1234567890"
+  label        = "Work"
 }
 
 `, methodType)
